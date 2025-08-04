@@ -1,0 +1,91 @@
+html {
+    min-height: 100vh;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#main-container {
+    display: flex;
+    align-items: flex-start; /* выравнивание по верхнему краю */
+    gap: 32px; /* расстояние между полем и панелью */
+}
+
+#game-board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--game-board-gap);
+    background: var(--game-board-background);
+    padding: var(--game-board-gap);
+    width: calc(
+        (var(--tile-size) + var(--game-board-gap)) * var(--game-board-width) -
+            var(--game-board-gap)
+    );
+}
+
+#next-board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--game-board-gap);
+    background: var(--game-board-background);
+    padding: var(--game-board-gap);
+    width: calc(
+        (var(--next-tile-size) + var(--game-board-gap)) * var(--next-board-width) -
+            var(--game-board-gap)
+    );
+}
+
+#next-board .tile {
+    width: var(--next-tile-size);
+    height: var(--next-tile-size);
+    background: var(--tile-color);
+}
+
+#next-board .tile.active {
+    background: var(--tile-active-color);
+}
+
+.tile {
+    width: var(--tile-size);
+    height: var(--tile-size);
+    background: var(--tile-color);
+}
+
+.active {
+    background: var(--tile-active-color);
+}
+
+#side-panel {
+    min-width: 150px;
+    /* или width: 200px; */
+}
+
+.dashboard-text {
+    font-size: 2rem;
+}
+
+/* #next-piece p {
+    margin-bottom: 4px;
+    font-size: 1.5rem;
+} */
+
+#games-list button {
+    min-width: 120px;
+    min-height: 40px;
+    font-size: 1.1em;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+#games-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* или center, если нужно по центру */
+    gap: 16px; /* интервал между кнопками */
+    margin: 20px 0;
+}

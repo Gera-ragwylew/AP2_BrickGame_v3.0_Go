@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <script src="./game.js" type="module" defer></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brick Game</title>
+</head>
+
+<body>
+    <h1>Brick Game</h1>
+    <div id="main-container">
+        <div id="game-board"></div>
+        <div id="side-panel" class="dashboard-text">
+            <div id="score">
+                <p>score: <span id="score-value">0</span></p>
+            </div>
+            <div id="high-score">
+                <p>high score: <span id="high-score-value">0</span></p>
+            </div>
+            <div id="next-piece">
+                <p>next:</p>
+                <div id="next-board"></div>
+            </div>
+            <div id="level">
+                <p>level: <span id="level-value">1</span></p>
+            </div>
+            <div id="speed">
+                <p>speed: <span id="speed-value">1</span></p>
+            </div>
+        </div>
+    </div>
+    <div id="games-list"></div>
+</body>
+
+</html>
