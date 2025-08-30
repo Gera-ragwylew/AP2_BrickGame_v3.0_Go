@@ -117,7 +117,7 @@ run: install
 
 clean:
 	@echo "Очистка файлов сборки..."
-	-rm -rf *.o *.a *.out *.gcda *.gcno *.gcov *.info *.cfg *.txt *.html *.css
+	-rm -rf *.o *.a *.out *.gcda *.gcno *.gcov *.info *.cfg *.txt *.html *.css *.so *.bin
 	-rm -f data.bin 
 	-rm -rf Game/
 	-rm -f $(TEST_NAME)

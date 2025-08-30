@@ -1,4 +1,4 @@
-package spec
+package gamespec
 
 type Action int
 

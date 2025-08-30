@@ -53,7 +53,6 @@ func (gt *GameTimer) FastReset() {
 
 func (gt *GameTimer) TickChan() <-chan time.Time {
 	if gt.tickChan == nil {
-		// Возвращаем закрытый канал, если таймер не запущен
 		closedChan := make(chan time.Time)
 		close(closedChan)
 		return closedChan
@@ -61,7 +60,6 @@ func (gt *GameTimer) TickChan() <-chan time.Time {
 	return gt.tickChan
 }
 
-// IsRunning проверяет, запущен ли таймер
 func (gt *GameTimer) IsRunning() bool {
 	return gt.ticker != nil
 }

@@ -1,17 +1,18 @@
 #include "fsm.h"
 
-#include <time.h>
+#include <sys/time.h>
 
 #include "backend.h"
 
 void fsm(Tetris* tetris) {
-  static clock_t last_fall = 0;
+  static struct timeval last_fall = {0};
   int fall_delay_ms = 1100 - (tetris->gameinfo.speed * 100 - 10);
-  if (fall_delay_ms < 50) {
-    fall_delay_ms = 50;
-  }
-  clock_t current_time = clock();
-  int elapsed_ms = (current_time - last_fall) * 1000 / CLOCKS_PER_SEC;
+  if (fall_delay_ms < 50) fall_delay_ms = 50;
+
+  struct timeval current_time;
+  gettimeofday(&current_time, NULL);
+
+  long elapsed_ms = (current_time.tv_sec - last_fall.tv_sec) * 1000 + (current_time.tv_usec - last_fall.tv_usec) / 1000;
 
   switch (tetris->stateofmachine) {
     case GameStart:
@@ -46,7 +47,7 @@ void fsm(Tetris* tetris) {
       } else if (tetris->action == Terminate) {
         tetris->stateofmachine = GameOver;
       }
-      if (tetris->gameinfo.pause != 1) {
+      if (tetris->gameinfo.pause != 1 && tetris->stateofmachine != GameOver) {
         despawn(tetris->gameinfo.field, tetris->current_brick);
         brick_move(tetris->current_brick, tetris->action,
                    tetris->gameinfo.field);

@@ -2,13 +2,12 @@ package race
 
 import (
 	"brick_game/internal/fsm"
-	"brick_game/internal/gametimer"
-	"brick_game/internal/spec"
-	"bufio"
+	gamespec "brick_game/internal/game_spec"
+	gametimer "brick_game/internal/game_timer"
+	"encoding/binary"
 	"math"
 	"math/rand"
 	"os"
-	"strconv"
 )
 
 const (
@@ -24,8 +23,8 @@ const (
 )
 
 type raceGame struct {
-	state          spec.State
-	action         spec.Action
+	state          gamespec.State
+	action         gamespec.Action
 	fsm            *fsm.FSM
 	playerPos      car
 	enemies        []car
@@ -34,18 +33,18 @@ type raceGame struct {
 	pendingSpawn   *bool
 }
 
-func (g *raceGame) UserInput(action spec.Action, hold bool) {
+func (g *raceGame) UserInput(action gamespec.Action, hold bool) {
 	g.action = action
 }
 
-func (g *raceGame) UpdateCurrentState() spec.State {
+func (g *raceGame) UpdateCurrentState() gamespec.State {
 	g.fsm.Update()
 	return g.state
 }
 
-func New() spec.Game {
+func New() gamespec.Game {
 	rg := &raceGame{
-		state: spec.State{
+		state: gamespec.State{
 			Field:     matrixInit(fieldHeight, fieldWidth),
 			Next:      matrixInit(nextHeight, nextWidth),
 			Pause:     true,
@@ -54,7 +53,7 @@ func New() spec.Game {
 			Level:     1,
 			Speed:     1,
 		},
-		action:         spec.Start,
+		action:         gamespec.Start,
 		fsm:            fsm.New(GameStart),
 		playerPos:      playerCarPositions.left,
 		enemies:        []car{},
@@ -63,7 +62,6 @@ func New() spec.Game {
 		pendingSpawn:   nil,
 	}
 
-	// Регистрируем обработчики состояний
 	rg.fsm.RegisterHandler(GameStart, &gameStartHandler{game: rg})
 	rg.fsm.RegisterHandler(Spawn, &spawnHandler{game: rg})
 	rg.fsm.RegisterHandler(Moving, &movingHandler{game: rg})
@@ -135,7 +133,7 @@ func (g *raceGame) addCarToEnemies() {
 moving methods
 */
 func (g *raceGame) resetAction() {
-	g.action = spec.Start
+	g.action = gamespec.Start
 }
 
 func (g *raceGame) togglePause() {
@@ -147,20 +145,20 @@ func (g *raceGame) isPaused() bool {
 }
 
 func (g *raceGame) isPauseAction() bool {
-	return g.action == spec.Pause
+	return g.action == gamespec.Pause
 }
 
 func (g *raceGame) isGameoverAction() bool {
-	return g.action == spec.Terminate
+	return g.action == gamespec.Terminate
 }
 
 func (g *raceGame) handleUserMovement() {
 	switch g.action {
-	case spec.Left:
+	case gamespec.Left:
 		g.playerPos.isRight = false
-	case spec.Right:
+	case gamespec.Right:
 		g.playerPos.isRight = true
-	case spec.Up:
+	case gamespec.Up:
 		g.gameTimer.FastReset()
 	}
 }
@@ -304,22 +302,25 @@ func (g *raceGame) scoreIncrement() {
 }
 
 func (g *raceGame) loadHighScore() {
-	if file, err := os.Open("high_score.txt"); err == nil {
+	if file, err := os.Open("race_data.bin"); err == nil {
 		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		if scanner.Scan() {
-			g.state.HighScore, _ = strconv.Atoi(scanner.Text())
+
+		var highScore int32
+		if err := binary.Read(file, binary.LittleEndian, &highScore); err == nil {
+			g.state.HighScore = int(highScore)
 		}
 	}
 }
 
 func (g *raceGame) saveHighScore() {
-	file, err := os.Create("high_score.txt")
+	file, err := os.Create("race_data.bin")
 	if err != nil {
 		return
 	}
 	defer file.Close()
-	file.WriteString(strconv.Itoa(g.state.HighScore))
+
+	highScore := int32(g.state.HighScore)
+	binary.Write(file, binary.LittleEndian, highScore)
 }
 
 func (g *raceGame) levelUp() bool {
@@ -339,12 +340,3 @@ func (g *raceGame) speedUp() bool {
 	}
 	return false
 }
-
-// func (g *raceGame) printCars() {
-// 	for i, v := range g.enemies {
-// 		println("car #", i, v.isRight)
-// 		for _, c := range v.coords {
-// 			println(c.y, " ", c.x)
-// 		}
-// 	}
-// }

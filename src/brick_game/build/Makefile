@@ -1,16 +1,30 @@
 # Makefile для проекта Brick Game на Go
 
-# Переменные
+# Compilers
+CC := gcc
+CXX := g++
+
+# Compiler flags
+CFLAGS := -Wall -Werror -Wextra -std=c11
+CXXFLAGS := -Wall -Werror -Wextra -std=c++17
+LDFLAGS := -lncurses -lcurl
+
+# directories
+TETRIS_DIR := ../internal/games/tetris
+TETRIS_SRC := $(TETRIS_DIR)/src
+SNAKE_DIR := ../internal/games/snake
+SNAKE_SRC := $(SNAKE_DIR)/src
+
+# Other
 BINARY_DIR = bin
 SERVER_BINARY = $(BINARY_DIR)/server
 CLI_BINARY = $(BINARY_DIR)/cli
+DESKTOP_BINARY = $(BINARY_DIR)/desktop
 GO_MODULE = brick_game
 GO_FILES = $(shell find . -name "*.go" -type f)
 
-
-
 # Основные цели
-.PHONY: all build clean test run-server run-cli help
+.PHONY: all build clean test run-server run-cli run-desktop run-serveo help
 
 # Цель по умолчанию
 all: build
@@ -23,16 +37,23 @@ $(BINARY_DIR):
 # Сборка сервера
 $(SERVER_BINARY): $(BINARY_DIR)
 	@echo "Сборка библиотеки Tetris..."
-	cd ../internal/games/tetris/c_tetris && make libtetris.a
+	cd $(TETRIS_SRC) && make libtetris.a
+	$(CC) $(CFLAGS) $(TETRIS_DIR)/main.c -o bin/tetris_process -L$(TETRIS_SRC) -ltetris -I./c_tetris/backend
 	@echo "Сборка библиотеки Snake..."
-	cd ../internal/games/snake/src && make libs21_snake.a && make libs21_tetris.a
+	cd $(SNAKE_SRC) && make libs21_tetris.a && make libs21_snake.a
+	$(CXX) $(CXXFLAGS) $(SNAKE_DIR)/main.cpp -o bin/snake_process -L$(SNAKE_SRC) -ls21_tetris -ls21_snake -I./src
 	@echo "Сборка сервера..."
-	go build -o $(SERVER_BINARY) ../cmd/server
+	go build -o $(SERVER_BINARY) ../cmd
 
 # Сборка CLI приложения
 $(CLI_BINARY): $(BINARY_DIR)
 	@echo "Сборка CLI приложения..."
-	go build -o $(CLI_BINARY) ../cmd/cli
+	$(CXX) $(CXXFLAGS) ../gui/cli/main.c ../gui/cli/frontend.c ../gui/client_library/game_client.cpp -o $(CLI_BINARY) $(LDFLAGS)
+
+# Сборка DESKTOP приложения
+$(DESKTOP_BINARY): $(BINARY_DIR)
+	@echo "Сборка DESKTOP приложения..."
+	$(CXX) $(CXXFLAGS) ../gui/desktop/gtk_main.cpp ../gui/desktop/gtk_frontend.cpp ../gui/client_library/game_client.cpp -o $(DESKTOP_BINARY) $(LDFLAGS) $(shell pkg-config gtkmm-4.0 glibmm-2.68 --cflags --libs)
 
 # Сборка всех компонентов
 build: $(SERVER_BINARY)
@@ -43,17 +64,18 @@ build: $(SERVER_BINARY)
 # Очистка
 clean:
 	@echo "Очистка бинарных файлов и временных файлов..."
-	rm -rf $(BINARY_DIR)
+	rm -rf $(BINARY_DIR) *.out *.html
 	find . -type f \( -name "*.bin" -o -name "*.txt" \) -delete
 	@echo "Очистка C-компонентов..."
-	cd ../internal/games/tetris/c_tetris && make clean
-	cd ../internal/games/snake/src && make clean
+	cd $(TETRIS_SRC) && make clean
+	cd $(SNAKE_SRC) && make clean
 	@echo "Очистка завершена!"
 
 # Запуск тестов
 test:
 	@echo "Запуск тестов..."
-	cd .. && go test ./...
+	go test -coverprofile=coverage.out ../internal/games/race
+	go tool cover -html=coverage.out -o coverage.html
 	@echo "Тесты завершены!"
 
 # Запуск сервера
@@ -65,6 +87,15 @@ run-server: $(SERVER_BINARY)
 run-cli: $(CLI_BINARY)
 	@echo "Запуск CLI приложения..."
 	./$(CLI_BINARY)
+
+# Запуск DESKTOP приложения
+run-desktop: $(DESKTOP_BINARY)
+	@echo "Запуск DESKTOP приложения..."
+	./$(DESKTOP_BINARY)
+
+run-serveo:
+	@echo "Запуск SERVEO..."
+	ssh -R 80:localhost:8080 serveo.net
 
 # Проверка зависимостей
 deps:
@@ -84,32 +115,3 @@ lint:
 	cd .. && go vet ./...
 	@echo "Проверка линтером завершена!"
 
-# Установка зависимостей для разработки
-install-dev-deps:
-	@echo "Установка инструментов разработки..."
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	@echo "Инструменты разработки установлены!"
-
-# Сборка для релиза (с оптимизациями)
-release: clean
-	@echo "Сборка релизной версии..."
-	cd .. && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../$(BINARY_DIR)/server-linux ./cmd/server
-	cd .. && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ../$(BINARY_DIR)/server-windows.exe ./cmd/server
-	cd .. && CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o ../$(BINARY_DIR)/server-darwin ./cmd/server
-	@echo "Релизные версии собраны!"
-
-# Справка
-help:
-	@echo "Доступные команды:"
-	@echo "  make          - сборка всех компонентов"
-	@echo "  make build    - сборка всех компонентов"
-	@echo "  make clean    - очистка бинарных файлов"
-	@echo "  make test     - запуск тестов"
-	@echo "  make run-server - запуск сервера"
-	@echo "  make run-cli  - запуск CLI приложения"
-	@echo "  make deps     - обновление зависимостей"
-	@echo "  make fmt      - форматирование кода"
-	@echo "  make lint     - проверка кода линтером"
-	@echo "  make release  - сборка релизных версий"
-	@echo "  make help     - показать эту справку" 

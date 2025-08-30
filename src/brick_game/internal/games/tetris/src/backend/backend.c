@@ -93,7 +93,7 @@ int score_init(Tetris* tetris) {
   int record = 0;
   int res = 0;
   FILE* file;
-  char* filename = "data.bin";
+  char* filename = "tetris_data.bin";
   file = fopen(filename, "rb");
   if (file == NULL) {
     file = fopen(filename, "wb");
@@ -442,7 +442,7 @@ void score_write(Tetris* tetris, int full_rows_counter) {
   if (tetris->gameinfo.score > tetris->gameinfo.high_score) {
     tetris->gameinfo.high_score = tetris->gameinfo.score;
     FILE* file;
-    char* filename = "data.bin";
+    char* filename = "tetris_data.bin";
     int record = tetris->gameinfo.high_score;
     file = fopen(filename, "wb");
     if (file != NULL) {

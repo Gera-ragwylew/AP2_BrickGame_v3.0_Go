@@ -9,13 +9,11 @@ import (
 	"text/template"
 )
 
-// Структура для хранения данных о состояниях
 type StateData struct {
 	StateName   string
 	HandlerName string
 }
 
-// Структура для хранения всех данных FSM
 type FSMData struct {
 	PackageName string
 	States      []StateData
@@ -23,51 +21,37 @@ type FSMData struct {
 	EntityName  string
 }
 
-// Шаблон для генерации FSM файла
 const fsmTemplate = `package {{.PackageName}}
 
 import (
 	"brick_game/internal/fsm"
 )
 
-// Константы состояний для {{.PackageName}}
+// State constants for {{.PackageName}}
 const (
 {{range .States}}	{{.StateName}} fsm.State = "{{.StateName}}"
 {{end}})
 
-// Обработчики состояний для {{.PackageName}}
+// State handlers for {{.PackageName}}
 {{range .States}}type {{.HandlerName}}Handler struct {
 	{{$.EntityName}} *{{$.PackageName}}{{$.EntityName}}
 }
 
 func (h *{{.HandlerName}}Handler) Handle() {
-	// TODO: Добавить логику обработки состояния {{.StateName}}
-	// Примеры действий:
-	// - h.{{$.EntityName}}.someMethod()
-	// - h.{{$.EntityName}}.fsm.SetState(NextState)
-	// - h.{{$.EntityName}}.updateSomething()
-	// - h.{{$.EntityName}}.checkConditions()
+	// TODO: Add {{.StateName}} state logic
 }
 
 {{end}}`
 
-// GenerateFSMFile создает FSM файл на основе введенных данных
 func GenerateFSMFile() {
-	fmt.Println("=== Генератор FSM структур ===")
+	fmt.Println("=== FSM Generator ===")
 
-	// Получаем путь к проекту
-	projectPath := getInput("Введите путь к проекту: ")
+	projectPath := getInput("Project path: ")
+	packageName := getInput("Package name: ")
+	entityName := getInput("Entity name (e.g., game, app): ")
 
-	// Получаем название пакета
-	packageName := getInput("Введите название пакета: ")
-
-	// Получаем название сущности (entity)
-	entityName := getInput("Введите название сущности (например, game, app, service): ")
-
-	// Получаем состояния
 	states := getStates()
 
-	// Создаем данные для шаблона
 	fsmData := FSMData{
 		PackageName: packageName,
 		States:      states,
@@ -75,10 +59,8 @@ func GenerateFSMFile() {
 		EntityName:  entityName,
 	}
 
-	// Генерируем файл
 	generateFSMFile(projectPath, packageName, fsmData)
-
-	fmt.Println("FSM файл успешно создан!")
+	fmt.Println("FSM file created successfully!")
 }
 
 func getInput(prompt string) string {
@@ -91,25 +73,21 @@ func getInput(prompt string) string {
 func getStates() []StateData {
 	var states []StateData
 
-	fmt.Println("\nВведите состояния (пустая строка для завершения):")
-
+	fmt.Println("\nEnter states (empty to finish):")
 	for {
-		stateName := getInput("Состояние: ")
+		stateName := getInput("State: ")
 		if stateName == "" {
 			break
 		}
 
-		// Преобразуем название состояния в camelCase для имени обработчика
-		handlerName := toCamelCase(stateName)
-
 		states = append(states, StateData{
 			StateName:   stateName,
-			HandlerName: handlerName,
+			HandlerName: toCamelCase(stateName),
 		})
 	}
 
 	if len(states) == 0 {
-		fmt.Println("Ошибка: должно быть указано хотя бы одно состояние")
+		fmt.Println("Error: at least one state required")
 		os.Exit(1)
 	}
 
@@ -134,37 +112,25 @@ func toCamelCase(s string) string {
 }
 
 func generateFSMFile(projectPath, packageName string, fsmData FSMData) {
-	// Создаем директорию если не существует
 	packageDir := filepath.Join(projectPath, packageName)
 	if err := os.MkdirAll(packageDir, 0755); err != nil {
-		fmt.Printf("Ошибка создания директории: %v\n", err)
+		fmt.Printf("Error creating directory: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Создаем имя файла
-	fileName := packageName + "Fsm.go"
-	filePath := filepath.Join(packageDir, fileName)
-
-	// Создаем файл
+	filePath := filepath.Join(packageDir, packageName+"Fsm.go")
 	file, err := os.Create(filePath)
 	if err != nil {
-		fmt.Printf("Ошибка создания файла: %v\n", err)
+		fmt.Printf("Error creating file: %v\n", err)
 		os.Exit(1)
 	}
 	defer file.Close()
 
-	// Парсим и выполняем шаблон
-	tmpl, err := template.New("fsm").Parse(fsmTemplate)
-	if err != nil {
-		fmt.Printf("Ошибка парсинга шаблона: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Записываем результат в файл
+	tmpl := template.Must(template.New("fsm").Parse(fsmTemplate))
 	if err := tmpl.Execute(file, fsmData); err != nil {
-		fmt.Printf("Ошибка записи в файл: %v\n", err)
+		fmt.Printf("Error writing file: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Файл создан: %s\n", filePath)
+	fmt.Printf("File created: %s\n", filePath)
 }

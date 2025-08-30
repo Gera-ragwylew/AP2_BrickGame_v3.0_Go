@@ -44,6 +44,7 @@ type movingHandler struct {
 
 func (h *movingHandler) Handle() {
 	defer h.game.resetAction()
+
 	if h.game.isGameoverAction() {
 		h.game.fsm.SetState(GameOver)
 		return
@@ -97,7 +98,6 @@ type attachingHandler struct {
 
 func (h *attachingHandler) Handle() {
 	if h.game.checkCollisions() {
-		h.game.saveHighScore()
 		h.game.fsm.SetState(GameOver)
 	} else {
 		h.game.fsm.SetState(Spawn)
@@ -109,6 +109,7 @@ type gameOverHandler struct {
 }
 
 func (h *gameOverHandler) Handle() {
+	h.game.saveHighScore()
 	h.game.stopTimer()
 	h.game.levelToOver()
 }
